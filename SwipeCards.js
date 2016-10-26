@@ -103,7 +103,7 @@ class SwipeCards extends Component {
     this._panResponder = PanResponder.create({
       onMoveShouldSetResponderCapture: () => true,
       onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
-        return gestureState.dx != 0 && gestureState.dy != 0;
+          return gestureState.dx != 0 && gestureState.dy != 0;
       },
 
       onPanResponderGrant: (e, gestureState) => {
@@ -111,9 +111,15 @@ class SwipeCards extends Component {
         this.state.pan.setValue({x: 0, y: 0});
       },
 
-      onPanResponderMove: Animated.event([
-        null, {dx: this.state.pan.x, dy: this.state.pan.y},
-      ]),
+      onPanResponderMove:(()=>{
+        var temp = Animated.event([
+            null, {dx: this.state.pan.x, dy: this.state.pan.y},
+        ]);
+        return ((...args)=>{
+            this.props.pan(this.state.pan.x._value);
+            temp(args[0],args[1]);
+        }).bind(this);
+          })(),
 
       onPanResponderRelease: (e, {vx, vy}) => {
         this.state.pan.flattenOffset();
@@ -125,11 +131,10 @@ class SwipeCards extends Component {
           velocity = clamp(vx * -1, 3, 5) * -1;
         }
 
-        if (Math.abs(this.state.pan.x._value) > SWIPE_THRESHOLD) {
-
+        if (Math.abs(this.state.pan.x._value) > SWIPE_THRESHOLD||Math.abs(this.state.pan.y._value) > SWIPE_THRESHOLD) {
           this.state.pan.x._value > 0
-            ? this.props.handleYup(this.state.card)
-            : this.props.handleNope(this.state.card)
+            ? this.props.handleYup(this.state.card,this.state.pan.x._value)
+            : this.props.handleNope(this.state.card,this.state.pan.x._value)
 
           this.props.cardRemoved
             ? this.props.cardRemoved(this.props.cards.indexOf(this.state.card))
@@ -244,6 +249,7 @@ SwipeCards.propTypes = {
     showYup: React.PropTypes.bool,
     showNope: React.PropTypes.bool,
     handleYup: React.PropTypes.func,
+    pan: React.PropTypes.func,
     handleNope: React.PropTypes.func,
     yupView: React.PropTypes.element,
     yupText: React.PropTypes.string,
